@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using static UnityEditor.Searcher.SearcherWindow.Alignment;
 using UnityEngine.UI;
+using System;
 
 public class CharacterController2D : MonoBehaviour
 {
@@ -19,6 +19,23 @@ public class CharacterController2D : MonoBehaviour
     public Animator animator;
     public GameObject fener;
     private bool disabled;
+    
+    public event System.Action OnReachedEndOfLevel;
+    public GameObject displayInfo;
+    public GameObject displayInfo2;
+    public Text appleInfo;
+    public Text bookInfo;
+    public GameObject displayInfo3;
+    public Text appleMaxInfo;
+    private float activeInfoTime = 5f;
+
+    private AudioSource audioSource;
+    
+    public AudioClip bookclip;
+    public AudioClip footClip;
+
+   
+    
 
 
 
@@ -34,6 +51,9 @@ public class CharacterController2D : MonoBehaviour
         bookSlider.maxValue = 10;
         rb = GetComponent<Rigidbody2D>();
         EnemyVision.OnGuardHasSpottedPlayer += Disabled;
+        audioSource = GetComponent<AudioSource>();
+
+        
     }
 
     void Update()
@@ -64,6 +84,17 @@ public class CharacterController2D : MonoBehaviour
 
         // Move the character to the new position
         transform.Translate(newPosition - transform.position);
+
+        if (bookSlider.value ==bookSlider.maxValue) 
+        {
+            displayInfo2.SetActive(true);
+            Invoke("DisabledText2", activeInfoTime);
+        }
+        if (appleSlider.value == appleSlider.maxValue)
+        {
+            displayInfo3.SetActive(true);
+            Invoke("DisabledText3", activeInfoTime);
+        }
 
     }
 
@@ -114,13 +145,50 @@ public class CharacterController2D : MonoBehaviour
 
             // Update the Slider value
             appleSlider.value = apples;
+            audioSource.PlayOneShot(footClip);
+            
         }
 
-        if (other.gameObject.CompareTag("book"))
+        if (other.gameObject.CompareTag("book")) 
         {
-            Destroy(other.gameObject);
-            books++;
-            bookSlider.value = books;
+            if (appleSlider.value < appleSlider.maxValue)
+            {
+                displayInfo.SetActive(true);
+                Invoke("DisabledText", activeInfoTime);
+            }
+            else if(appleSlider.value == appleSlider.maxValue)
+            {
+                Destroy(other.gameObject);
+                books++;
+                bookSlider.value = books;
+                audioSource.PlayOneShot(bookclip);
+                
+            }
+      
         }
+
+        if (other.tag == "Finish" && bookSlider.value==bookSlider.maxValue && appleSlider.value==appleSlider.maxValue)
+        {
+            Disabled();
+            if (OnReachedEndOfLevel != null)
+            {
+                OnReachedEndOfLevel();
+            }
+        }
+
+       
     }
+    void DisabledText()
+    {
+        appleInfo.enabled = false;
+    }
+    void DisabledText2()
+    {
+       bookInfo.enabled = false;
+    }
+    void DisabledText3()
+    {
+        appleMaxInfo.enabled = false;
+    }
+
 }
